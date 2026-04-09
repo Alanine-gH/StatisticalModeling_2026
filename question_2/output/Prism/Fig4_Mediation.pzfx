@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GraphPadPrismFile xmlns="http://graphpad.com/prism/Prism.htm" PrismXMLVersion="5.00">
+  <Created>
+    <OriginalNumberFormat digits="5" type="decimal"/>
+    <CreatedByProgram>GraphPad Prism</CreatedByProgram>
+    <CreatedByVersion>10.1.2</CreatedByVersion>
+    <Login LoggedIn="1"/>
+    <TableOrder>0</TableOrder>
+  </Created>
+  <InfoSequence>
+    <Ref ID="Info0" Selected="1"/>
+  </InfoSequence>
+  <Info ID="Info0">
+    <Title>Project Info 1</Title>
+    <Notes>Parallel mediation analysis. Values with 95% Bootstrap CI. * CI not containing 0 indicates significance.</Notes>
+  </Info>
+  <TableSequence>
+    <Ref ID="Table0" Selected="1"/>
+  </TableSequence>
+  <Table ID="Table0" XFormat="labels" YFormat="replicates" Replicates="1" TableType="OneWay" EVFormat="SEM">
+    <Title>Fig4 - Mediation Contribution</Title>
+    <RowTitlesColumn Width="200">
+      <Subcolumn>
+        <d>Tech Innovation</d>
+        <d>Industrial Upgrade</d>
+        <d>Transport Optimization</d>
+      </Subcolumn>
+    </RowTitlesColumn>
+    <YColumn Width="75" Decimals="4" Subcolumns="1">
+      <Title>Indirect Effect (Contribution %)</Title>
+      <Subcolumn>
+        <d>11.41</d>
+        <d>69.97</d>
+        <d>18.62</d>
+      </Subcolumn>
+    </YColumn>
+  </Table>
+  <GraphSequence>
+    <Ref ID="Graph0" Selected="1"/>
+  </GraphSequence>
+  <Graph ID="Graph0" IsTemplate="0">
+    <Title>Fig. 4 Contribution of Parallel Mediation Pathways</Title>
+    <LegendText AutoWidth="1" BackColor="white" EdgeThickness="None" Font="Arial" FontSize="12" Hide="1"/>
+    <Axes>
+      <XAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Contribution (%)</Title>
+        <NumberFormat digits="1" type="decimal"/>
+        <Range Min="0" Max="85" GridLines="0"/>
+      </XAxis>
+      <YAxis>
+        <Title Font="Arial" FontSize="13" Bold="0"></Title>
+      </YAxis>
+    </Axes>
+    <PlotObjects>
+      <DataSet OrderNumber="0">
+        <Appearance>
+          <Bar FillColor="4278222848" EdgeColor="4278222848" Width="0.6" Horizontal="1"/>
+        </Appearance>
+      </DataSet>
+    </PlotObjects>
+    <AddedObjects>
+      <Text X="12.5" Y="0" Text="11.4% (n.s.)" Font="Arial" FontSize="11" Bold="0" HorizJust="Left"/>
+      <Text X="71.0" Y="1" Text="70.0% ***" Font="Arial" FontSize="11" Bold="1" HorizJust="Left"/>
+      <Text X="19.5" Y="2" Text="18.6% **" Font="Arial" FontSize="11" Bold="1" HorizJust="Left"/>
+    </AddedObjects>
+    <Frame HasTopBorder="0" HasRightBorder="0"/>
+    <FontSettings Font="Arial" FontSize="12"/>
+    <PageSettings Width="4.5" Height="3" Units="inches"/>
+  </Graph>
+</GraphPadPrismFile>

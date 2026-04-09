@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GraphPadPrismFile xmlns="http://graphpad.com/prism/Prism.htm" PrismXMLVersion="5.00">
+  <Created>
+    <OriginalNumberFormat digits="5" type="decimal"/>
+    <CreatedByProgram>GraphPad Prism</CreatedByProgram>
+    <CreatedByVersion>10.1.2</CreatedByVersion>
+    <Login LoggedIn="1"/>
+    <TableOrder>0</TableOrder>
+  </Created>
+  <InfoSequence>
+    <Ref ID="Info0" Selected="1"/>
+  </InfoSequence>
+  <Info ID="Info0">
+    <Title>Project Info 1</Title>
+    <Notes/>
+  </Info>
+  <TableSequence>
+    <Ref ID="Table0" Selected="1"/>
+  </TableSequence>
+  <Table ID="Table0" XFormat="numbers" YFormat="replicates" Replicates="1" TableType="XY" EVFormat="SEM">
+    <Title>Fig1 - Index Yearly Trend</Title>
+    <RowTitlesColumn Width="75">
+      <Subcolumn/>
+    </RowTitlesColumn>
+    <XColumn Width="75">
+      <Title>Year</Title>
+      <Subcolumn>
+        <d>2016</d>
+        <d>2017</d>
+        <d>2018</d>
+        <d>2019</d>
+        <d>2020</d>
+        <d>2021</d>
+        <d>2022</d>
+        <d>2023</d>
+      </Subcolumn>
+    </XColumn>
+    <YColumn Width="75" Decimals="4" Subcolumns="1">
+      <Title>Low-Altitude Economy Index</Title>
+      <Subcolumn>
+        <d>0.4534</d>
+        <d>0.4672</d>
+        <d>0.4805</d>
+        <d>0.4926</d>
+        <d>0.5106</d>
+        <d>0.5278</d>
+        <d>0.5469</d>
+        <d>0.5676</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="4" Subcolumns="1">
+      <Title>Green Transport Index</Title>
+      <Subcolumn>
+        <d>0.6208</d>
+        <d>0.6275</d>
+        <d>0.6401</d>
+        <d>0.6544</d>
+        <d>0.6713</d>
+        <d>0.6881</d>
+        <d>0.7032</d>
+        <d>0.7206</d>
+      </Subcolumn>
+    </YColumn>
+  </Table>
+  <GraphSequence>
+    <Ref ID="Graph0" Selected="1"/>
+  </GraphSequence>
+  <Graph ID="Graph0" IsTemplate="0">
+    <Title>Fig. 1 Temporal Trends of Low-Altitude Economy and Green Transport Indices (2016–2023)</Title>
+    <LegendText AutoWidth="1" BackColor="white" EdgeThickness="None" Font="Arial" FontSize="12"/>
+    <Axes>
+      <XAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Year</Title>
+        <NumberFormat digits="0" type="decimal"/>
+        <Range Min="2015.5" Max="2023.5" GridLines="0" MajorTicks="8" MinorTicks="0"/>
+      </XAxis>
+      <YAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Composite Index Score</Title>
+        <NumberFormat digits="2" type="decimal"/>
+        <Range Min="0.3" Max="0.85" GridLines="0"/>
+      </YAxis>
+    </Axes>
+    <PlotObjects>
+      <DataSet OrderNumber="0">
+        <Appearance>
+          <Line Color="2155905279" Thickness="2.5" Style="Solid"/>
+          <Symbol Shape="Circle" Size="6" Color="2155905279" FillColor="2155905279"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="1">
+        <Appearance>
+          <Line Color="4278222848" Thickness="2.5" Style="Solid"/>
+          <Symbol Shape="Square" Size="6" Color="4278222848" FillColor="4278222848"/>
+        </Appearance>
+      </DataSet>
+    </PlotObjects>
+    <Frame HasTopBorder="0" HasRightBorder="0"/>
+    <FontSettings Font="Arial" FontSize="12"/>
+    <PageSettings Width="4" Height="3.5" Units="inches"/>
+  </Graph>
+</GraphPadPrismFile>

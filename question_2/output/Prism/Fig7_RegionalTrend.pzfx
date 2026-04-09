@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GraphPadPrismFile xmlns="http://graphpad.com/prism/Prism.htm" PrismXMLVersion="5.00">
+  <Created>
+    <OriginalNumberFormat digits="5" type="decimal"/>
+    <CreatedByProgram>GraphPad Prism</CreatedByProgram>
+    <CreatedByVersion>10.1.2</CreatedByVersion>
+    <Login LoggedIn="1"/>
+    <TableOrder>0 1</TableOrder>
+  </Created>
+  <InfoSequence>
+    <Ref ID="Info0" Selected="1"/>
+  </InfoSequence>
+  <Info ID="Info0">
+    <Title>Project Info 1</Title>
+    <Notes>Regional yearly trend: 4 regions x 2 indices (2016-2023). Table0 = Low-Altitude, Table1 = Green Transport</Notes>
+  </Info>
+  <TableSequence>
+    <Ref ID="Table0" Selected="1"/>
+    <Ref ID="Table1" Selected="0"/>
+  </TableSequence>
+  <Table ID="Table0" XFormat="numbers" YFormat="replicates" Replicates="1" TableType="XY" EVFormat="SEM">
+    <Title>Low-Altitude Index by Region</Title>
+    <RowTitlesColumn Width="75">
+      <Subcolumn/>
+    </RowTitlesColumn>
+    <XColumn Width="75">
+      <Title>Year</Title>
+      <Subcolumn>
+        <d>2016</d>
+        <d>2017</d>
+        <d>2018</d>
+        <d>2019</d>
+        <d>2020</d>
+        <d>2021</d>
+        <d>2022</d>
+        <d>2023</d>
+      </Subcolumn>
+    </XColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Eastern</Title>
+      <Subcolumn>
+        <d>0.561</d>
+        <d>0.575</d>
+        <d>0.589</d>
+        <d>0.603</d>
+        <d>0.621</d>
+        <d>0.638</d>
+        <d>0.657</d>
+        <d>0.676</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Central</Title>
+      <Subcolumn>
+        <d>0.421</d>
+        <d>0.432</d>
+        <d>0.444</d>
+        <d>0.456</d>
+        <d>0.471</d>
+        <d>0.486</d>
+        <d>0.503</d>
+        <d>0.521</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Western</Title>
+      <Subcolumn>
+        <d>0.372</d>
+        <d>0.381</d>
+        <d>0.392</d>
+        <d>0.404</d>
+        <d>0.419</d>
+        <d>0.435</d>
+        <d>0.452</d>
+        <d>0.469</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Northeastern</Title>
+      <Subcolumn>
+        <d>0.356</d>
+        <d>0.364</d>
+        <d>0.371</d>
+        <d>0.377</d>
+        <d>0.382</d>
+        <d>0.390</d>
+        <d>0.399</d>
+        <d>0.409</d>
+      </Subcolumn>
+    </YColumn>
+  </Table>
+  <Table ID="Table1" XFormat="numbers" YFormat="replicates" Replicates="1" TableType="XY" EVFormat="SEM">
+    <Title>Green Transport Index by Region</Title>
+    <RowTitlesColumn Width="75">
+      <Subcolumn/>
+    </RowTitlesColumn>
+    <XColumn Width="75">
+      <Title>Year</Title>
+      <Subcolumn>
+        <d>2016</d>
+        <d>2017</d>
+        <d>2018</d>
+        <d>2019</d>
+        <d>2020</d>
+        <d>2021</d>
+        <d>2022</d>
+        <d>2023</d>
+      </Subcolumn>
+    </XColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Eastern</Title>
+      <Subcolumn>
+        <d>0.676</d>
+        <d>0.684</d>
+        <d>0.697</d>
+        <d>0.709</d>
+        <d>0.724</d>
+        <d>0.739</d>
+        <d>0.753</d>
+        <d>0.768</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Central</Title>
+      <Subcolumn>
+        <d>0.603</d>
+        <d>0.611</d>
+        <d>0.623</d>
+        <d>0.636</d>
+        <d>0.651</d>
+        <d>0.666</d>
+        <d>0.679</d>
+        <d>0.693</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Western</Title>
+      <Subcolumn>
+        <d>0.571</d>
+        <d>0.578</d>
+        <d>0.587</d>
+        <d>0.599</d>
+        <d>0.612</d>
+        <d>0.625</d>
+        <d>0.639</d>
+        <d>0.652</d>
+      </Subcolumn>
+    </YColumn>
+    <YColumn Width="75" Decimals="3" Subcolumns="1">
+      <Title>Northeastern</Title>
+      <Subcolumn>
+        <d>0.581</d>
+        <d>0.584</d>
+        <d>0.588</d>
+        <d>0.592</d>
+        <d>0.597</d>
+        <d>0.602</d>
+        <d>0.607</d>
+        <d>0.612</d>
+      </Subcolumn>
+    </YColumn>
+  </Table>
+  <GraphSequence>
+    <Ref ID="Graph0" Selected="1"/>
+    <Ref ID="Graph1" Selected="0"/>
+  </GraphSequence>
+  <Graph ID="Graph0" IsTemplate="0">
+    <Title>Fig. 7A Low-Altitude Economy Index Trend by Region (2016–2023)</Title>
+    <LegendText AutoWidth="1" BackColor="white" EdgeThickness="None" Font="Arial" FontSize="12"/>
+    <Axes>
+      <XAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Year</Title>
+        <NumberFormat digits="0" type="decimal"/>
+        <Range Min="2015.5" Max="2023.5" GridLines="0" MajorTicks="8" MinorTicks="0"/>
+      </XAxis>
+      <YAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Low-Altitude Economy Index</Title>
+        <NumberFormat digits="2" type="decimal"/>
+        <Range Min="0.30" Max="0.75" GridLines="0"/>
+      </YAxis>
+    </Axes>
+    <PlotObjects>
+      <DataSet OrderNumber="0">
+        <Appearance>
+          <Line Color="2155905279" Thickness="2.5" Style="Solid"/>
+          <Symbol Shape="Circle" Size="6" Color="2155905279" FillColor="2155905279"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="1">
+        <Appearance>
+          <Line Color="4278222848" Thickness="2.5" Style="Solid"/>
+          <Symbol Shape="Square" Size="6" Color="4278222848" FillColor="4278222848"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="2">
+        <Appearance>
+          <Line Color="4294944000" Thickness="2.5" Style="Dashed"/>
+          <Symbol Shape="Triangle" Size="6" Color="4294944000" FillColor="4294944000"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="3">
+        <Appearance>
+          <Line Color="4286611456" Thickness="2.5" Style="Dashed"/>
+          <Symbol Shape="Diamond" Size="6" Color="4286611456" FillColor="16777215"/>
+        </Appearance>
+      </DataSet>
+    </PlotObjects>
+    <Frame HasTopBorder="0" HasRightBorder="0"/>
+    <FontSettings Font="Arial" FontSize="12"/>
+    <PageSettings Width="4.5" Height="3.8" Units="inches"/>
+  </Graph>
+  <Graph ID="Graph1" IsTemplate="0">
+    <Title>Fig. 7B Green Transport Index Trend by Region (2016–2023)</Title>
+    <LegendText AutoWidth="1" BackColor="white" EdgeThickness="None" Font="Arial" FontSize="12"/>
+    <Axes>
+      <XAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Year</Title>
+        <NumberFormat digits="0" type="decimal"/>
+        <Range Min="2015.5" Max="2023.5" GridLines="0" MajorTicks="8" MinorTicks="0"/>
+      </XAxis>
+      <YAxis>
+        <Title Font="Arial" FontSize="13" Bold="0">Green Transport Index</Title>
+        <NumberFormat digits="2" type="decimal"/>
+        <Range Min="0.50" Max="0.85" GridLines="0"/>
+      </YAxis>
+    </Axes>
+    <PlotObjects>
+      <DataSet OrderNumber="0">
+        <Appearance>
+          <Line Color="2155905279" Thickness="2.5" Style="Solid"/>
+          <Symbol Shape="Circle" Size="6" Color="2155905279" FillColor="2155905279"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="1">
+        <Appearance>
+          <Line Color="4278222848" Thickness="2.5" Style="Solid"/>
+          <Symbol Shape="Square" Size="6" Color="4278222848" FillColor="4278222848"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="2">
+        <Appearance>
+          <Line Color="4294944000" Thickness="2.5" Style="Dashed"/>
+          <Symbol Shape="Triangle" Size="6" Color="4294944000" FillColor="4294944000"/>
+        </Appearance>
+      </DataSet>
+      <DataSet OrderNumber="3">
+        <Appearance>
+          <Line Color="4286611456" Thickness="2.5" Style="Dashed"/>
+          <Symbol Shape="Diamond" Size="6" Color="4286611456" FillColor="16777215"/>
+        </Appearance>
+      </DataSet>
+    </PlotObjects>
+    <Frame HasTopBorder="0" HasRightBorder="0"/>
+    <FontSettings Font="Arial" FontSize="12"/>
+    <PageSettings Width="4.5" Height="3.8" Units="inches"/>
+  </Graph>
+</GraphPadPrismFile>
