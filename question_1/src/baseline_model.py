@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -139,11 +139,19 @@ class TraditionalCriticEntropyModel:
 
 def build_model_comparison_table(proposed_df: pd.DataFrame, baseline_df: pd.DataFrame) -> pd.DataFrame:
     """生成改进模型与传统模型的逐样本对比表。"""
-    merged = proposed_df[["年份", "省份", "区域", "双系统综合发展指数"]].merge(
-        baseline_df[["年份", "省份", "双系统综合发展指数", "全国排名"]],
-        on=["年份", "省份"],
-        suffixes=("_改进模型", "_传统模型"),
+    proposed_part = proposed_df[["年份", "省份", "区域", "双系统综合发展指数", "全国排名"]].rename(
+        columns={
+            "双系统综合发展指数": "双系统综合发展指数_改进模型",
+            "全国排名": "全国排名_改进模型",
+        }
     )
+    baseline_part = baseline_df[["年份", "省份", "双系统综合发展指数", "全国排名"]].rename(
+        columns={
+            "双系统综合发展指数": "双系统综合发展指数_传统模型",
+            "全国排名": "全国排名_传统模型",
+        }
+    )
+    merged = proposed_part.merge(baseline_part, on=["年份", "省份"], how="inner")
     merged["指数差值_改进减传统"] = (
         merged["双系统综合发展指数_改进模型"] - merged["双系统综合发展指数_传统模型"]
     )
