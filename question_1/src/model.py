@@ -30,11 +30,17 @@ class TimeDecayCriticEntropyModel:
         start_boost_year: int = 2021,
         critic_ratio: float = 0.5,
         entropy_ratio: float = 0.5,
+        low_system_share: float = 0.5,
+        time_weight_strength: float = 0.8,
+        late_year_bonus: float = 0.25,
     ) -> None:
         self.decay_base = decay_base
         self.start_boost_year = start_boost_year
         self.critic_ratio = critic_ratio
         self.entropy_ratio = entropy_ratio
+        self.low_system_share = low_system_share
+        self.time_weight_strength = time_weight_strength
+        self.late_year_bonus = late_year_bonus
 
     @staticmethod
     def _normalize_series(weights: pd.Series) -> pd.Series:
@@ -72,7 +78,7 @@ class TimeDecayCriticEntropyModel:
         decay = years.apply(lambda y: self.decay_base ** max(0, latest_year - int(y))).astype(float)
         post_start_mask = years.astype(int) >= self.start_boost_year
         if post_start_mask.any():
-            structural_gain = post_start_mask.astype(float) + decay
+            structural_gain = 1 + post_start_mask.astype(float) * self.late_year_bonus
             decay = decay * structural_gain
         return decay.reindex(years.index)
 
@@ -86,7 +92,8 @@ class TimeDecayCriticEntropyModel:
         weighted_data = df[indicators].mul(time_vector, axis=0)
         dispersion = weighted_data.std(ddof=0)
         level = weighted_data.mean(axis=0)
-        time_weight = dispersion * level
+        trend_gain = weighted_data.groupby(df["年份"]).mean().diff().clip(lower=0).mean(axis=0).fillna(0)
+        time_weight = dispersion * level * (1 + self.time_weight_strength * trend_gain)
         return self._normalize_series(time_weight.reindex(indicators))
 
     def combine_weights(
@@ -147,7 +154,10 @@ class TimeDecayCriticEntropyModel:
         result_df = df[["年份", "省份", "区域"]].copy()
         result_df["低空经济指数"] = low_result["scores"]
         result_df["绿色交通指数"] = green_result["scores"]
-        result_df["双系统综合发展指数"] = 0.5 * result_df["低空经济指数"] + 0.5 * result_df["绿色交通指数"]
+        result_df["双系统综合发展指数"] = (
+            self.low_system_share * result_df["低空经济指数"]
+            + (1 - self.low_system_share) * result_df["绿色交通指数"]
+        )
         result_df["全国排名"] = result_df.groupby("年份")["双系统综合发展指数"].rank(ascending=False, method="min")
 
         return {
