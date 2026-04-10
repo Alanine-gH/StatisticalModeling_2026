@@ -42,7 +42,7 @@ class GraphSAGEStyleRegressor:
     def fit(self, train_df: pd.DataFrame, target_col: str) -> "GraphSAGEStyleRegressor":
         """训练图模型。"""
         train_extended = self._build_extended_features(train_df)
-        self.extended_feature_cols = [col for col in train_extended.columns if col not in {"省份", "年份", target_col}]
+        self.extended_feature_cols = [col for col in train_extended.columns if col not in {"省份", "年份", target_col, "区域"}]
         self.model.fit(train_extended[self.extended_feature_cols], train_extended[target_col])
         return self
 
@@ -141,3 +141,147 @@ class LSTMStyleRegressor:
     def predict(self, input_df: pd.DataFrame) -> np.ndarray:
         """输出非线性模型预测结果。"""
         return self.model.predict(input_df[self.feature_cols])
+
+
+def evaluate_predictions(y_true: pd.Series, y_pred: np.ndarray) -> Dict[str, float]:
+    """计算回归模型评价指标。"""
+    rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
+    return {
+        "MAE": float(mean_absolute_error(y_true, y_pred)),
+        "RMSE": rmse,
+        "R2": float(r2_score(y_true, y_pred)),
+    }
+
+
+def run_model_comparison(
+    train_df: pd.DataFrame,
+    valid_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    feature_cols: List[str],
+    target_col: str,
+    spatial_weight: pd.DataFrame,
+) -> Tuple[pd.DataFrame, Dict[str, ModelResult]]:
+    """训练多类模型并输出测试集对比结果。"""
+    combined_train_df = pd.concat([train_df, valid_df], ignore_index=True)
+
+    models = {
+        "GraphSAGE": GraphSAGEStyleRegressor(feature_cols=feature_cols, spatial_weight=spatial_weight),
+        "ARIMA": RollingAverageRegressor(),
+        "GM(1,1)": GreyModelRegressor(),
+        "LSTM": LSTMStyleRegressor(feature_cols=feature_cols),
+    }
+
+    outputs: Dict[str, ModelResult] = {}
+    rows: List[Dict[str, float | str]] = []
+    for model_name, model in models.items():
+        fitted_model = model.fit(combined_train_df, target_col)
+        predictions = fitted_model.predict(test_df)
+        metrics = evaluate_predictions(test_df[target_col], predictions)
+        outputs[model_name] = ModelResult(
+            model_name=model_name,
+            fitted_model=fitted_model,
+            predictions=predictions,
+            metrics=metrics,
+        )
+        rows.append({"模型": model_name, **metrics})
+
+    comparison_df = pd.DataFrame(rows)
+    comparison_df = comparison_df.sort_values(by=["RMSE", "MAE", "R2"], ascending=[True, True, False]).reset_index(drop=True)
+    return comparison_df, outputs
+
+
+def forecast_future_scenarios(model: object, scenario_inputs: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    """使用最优模型预测三种未来情景。"""
+    prediction_outputs: Dict[str, pd.DataFrame] = {}
+    for scenario_name, scenario_df in scenario_inputs.items():
+        forecast_df = scenario_df.copy()
+        forecast_df["预测值"] = model.predict(scenario_df)
+        forecast_df["情景"] = {
+            "baseline": "基准情景",
+            "stronger": "加大投入情景",
+            "targeted": "重点投入情景",
+        }.get(scenario_name, scenario_name)
+        prediction_outputs[scenario_name] = forecast_df
+    return prediction_outputs
+
+
+def build_region_summary(prediction_outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """汇总四大区域在不同情景下的年度均值预测。"""
+    frames: List[pd.DataFrame] = []
+    for _, forecast_df in prediction_outputs.items():
+        summary_df = (
+            forecast_df.groupby(["区域", "年份", "情景"], as_index=False)["预测值"]
+            .mean()
+            .sort_values(["区域", "年份"])
+        )
+        frames.append(summary_df)
+    return pd.concat(frames, ignore_index=True)
+
+
+def build_shandong_comparison(prediction_outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """提取山东省在不同情景下的年度预测结果。"""
+    frames: List[pd.DataFrame] = []
+    for _, forecast_df in prediction_outputs.items():
+        shandong_df = forecast_df[forecast_df["省份"] == "山东"][["省份", "年份", "预测值", "情景"]].copy()
+        frames.append(shandong_df)
+    return pd.concat(frames, ignore_index=True)
+
+
+def build_province_heatmap_matrix(prediction_outputs: Dict[str, pd.DataFrame], scenario_name: str = "targeted") -> pd.DataFrame:
+    """构造各省份年度预测值热力图矩阵。"""
+    forecast_df = prediction_outputs[scenario_name].copy()
+    province_order = (
+        forecast_df.groupby(["区域", "省份"], as_index=False)["预测值"]
+        .mean()
+        .sort_values(["区域", "预测值"], ascending=[True, False])["省份"]
+        .tolist()
+    )
+    heatmap_df = forecast_df.pivot_table(index="省份", columns="年份", values="预测值", aggfunc="mean")
+    heatmap_df = heatmap_df.reindex(province_order)
+    return heatmap_df
+
+
+def build_region_ranking(prediction_outputs: Dict[str, pd.DataFrame], year: int = 2030, scenario_name: str = "targeted") -> pd.DataFrame:
+    """构造指定年份各区域排名数据。"""
+    forecast_df = prediction_outputs[scenario_name].copy()
+    ranking_df = (
+        forecast_df[forecast_df["年份"] == year]
+        .groupby("区域", as_index=False)["预测值"]
+        .mean()
+        .sort_values("预测值", ascending=True)
+        .reset_index(drop=True)
+    )
+    return ranking_df
+
+
+def build_scenario_comparison(prediction_outputs: Dict[str, pd.DataFrame], province: str = "山东") -> pd.DataFrame:
+    """构造指定省份在三种情景下的增量比较数据。"""
+    province_df = build_shandong_comparison(prediction_outputs)
+    if province != "山东":
+        frames: List[pd.DataFrame] = []
+        for _, forecast_df in prediction_outputs.items():
+            sub_df = forecast_df[forecast_df["省份"] == province][["省份", "年份", "预测值", "情景"]].copy()
+            frames.append(sub_df)
+        province_df = pd.concat(frames, ignore_index=True)
+
+    base_map = (
+        province_df[province_df["情景"] == "基准情景"][["年份", "预测值"]]
+        .rename(columns={"预测值": "基准预测值"})
+    )
+    comparison_df = province_df.merge(base_map, on="年份", how="left")
+    comparison_df["相对基准提升"] = comparison_df["预测值"] - comparison_df["基准预测值"]
+    return comparison_df
+
+
+def summarize_key_findings(prediction_outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """汇总可用于正文撰写的关键结论指标。"""
+    rows: List[Dict[str, float | str]] = []
+    for scenario_name, forecast_df in prediction_outputs.items():
+        label = forecast_df["情景"].iloc[0]
+        for region, region_df in forecast_df.groupby("区域"):
+            growth_value = float(
+                region_df[region_df["年份"] == 2030]["预测值"].mean()
+                - region_df[region_df["年份"] == 2024]["预测值"].mean()
+            )
+            rows.append({"情景": label, "区域": region, "2024-2030增幅": growth_value})
+    return pd.DataFrame(rows)
