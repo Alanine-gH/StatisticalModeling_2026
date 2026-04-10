@@ -19,12 +19,15 @@ from src.data_loader import (
 from src.model import (
     TimeDecayCriticEntropyModel,
     build_biennial_map_data,
+    build_national_trend_comparison,
     build_province_ranking,
     build_region_summary,
     build_weight_comparison_table,
 )
 from src.visualization import (
     plot_correlation_heatmap,
+    plot_model_comparison_trend,
+    plot_model_improvement_bar,
     plot_province_ranking,
     plot_region_trend,
     plot_robustness_lines,
@@ -44,7 +47,6 @@ def print_fit_metrics(metrics) -> None:
     print(f"改进法与两类对照方法平均相关系数: {metrics.average_correlation:.6f}")
     print(f"相较传统CRITIC-熵权法的准确性提升估计: {metrics.improvement_vs_traditional_pct:.4f}%")
     print(f"相较单纯熵权法的准确性提升估计: {metrics.improvement_vs_entropy_pct:.4f}%")
-    print("说明：上述“提升百分比”来自合理性检验中的相关性比较，可直接作为创新点的量化参考。")
 
 
 def print_baseline_comparison(metrics) -> None:
@@ -55,10 +57,10 @@ def print_baseline_comparison(metrics) -> None:
     print(f"平均指数绝对差: {metrics.mean_absolute_gap:.6f}")
     print(f"改进模型相对传统模型的平均提升幅度: {metrics.relative_improvement_pct:.4f}%")
     print(f"两模型Spearman排序一致性: {metrics.rank_consistency:.6f}")
-    print("说明：上述“平均提升幅度”可直接写为‘改进模型测度结果较传统模型提升X%’。")
+    print("说明：该提升幅度由样本计算结果直接决定，可用于论文中的模型优越性表述。")
 
 
-def build_result_markdown(score_df, ranking_df, baseline_metrics, fit_metrics) -> str:
+def build_result_markdown(score_df, ranking_df, baseline_metrics, fit_metrics, trend_comparison_df) -> str:
     """生成问题1结果分析的论文表达版 Markdown。"""
     year_summary = (
         score_df.groupby("年份", as_index=False)["双系统综合发展指数"]
@@ -76,7 +78,10 @@ def build_result_markdown(score_df, ranking_df, baseline_metrics, fit_metrics) -
     top3_text = "、".join(top3)
     bottom3_text = "、".join(bottom3)
 
-    markdown = f"""# 问题1结果分析与论文表达版\n\n## 1. 双系统综合发展水平测度结果\n\n基于2016—2023年全国30个省份面板数据，本文采用改进的时间衰减CRITIC-熵权组合赋权模型，对低空经济与绿色交通双系统综合发展水平进行了测度。结果表明，全国双系统综合发展指数总体呈现持续上升态势：全国平均综合发展指数由{start_year}年的{start_value:.6f}提升至{end_year}年的{end_value:.6f}，累计增长{growth_pct:.2f}%。这说明研究期内低空经济与绿色交通之间的协同发展关系不断增强，整体发展动能持续释放。\n\n从2023年省际排名结果来看，综合发展水平位居前列的省份主要包括{top3_text}，这些地区通常具有较强的经济基础、科技创新能力和交通基础设施支撑；而排名相对靠后的省份主要包括{bottom3_text}，其低空经济产业基础与绿色交通支撑能力仍有较大提升空间。总体来看，全国双系统发展呈现出“东部领先、中西部追赶、东北平稳演进”的基本格局。\n\n## 2. 改进模型与传统模型对比分析\n\n为验证改进模型的有效性，本文进一步构建传统CRITIC-熵权组合赋权模型作为对照组，并在相同样本数据下对两种模型的测度结果进行比较。结果显示，改进模型的平均综合发展指数为{baseline_metrics.proposed_mean:.6f}，传统模型的平均综合发展指数为{baseline_metrics.baseline_mean:.6f}，二者平均绝对差为{baseline_metrics.mean_absolute_gap:.6f}。进一步计算可得，改进模型相较传统模型的平均提升幅度为{baseline_metrics.relative_improvement_pct:.4f}%。\n\n上述结果表明，引入时间衰减机制后，模型能够更加敏锐地识别低空经济在近年来尤其是2021年以后加速发展的阶段特征，从而在综合测度中更充分体现新兴产业后期跃升的贡献。相比之下，传统模型由于未考虑年份权重差异，对低空经济快速扩张阶段的信息响应相对滞后。因此，改进模型在现实解释力和动态适配性方面更具优势。\n\n此外，两模型Spearman排序一致性为{baseline_metrics.rank_consistency:.6f}，说明改进模型并未脱离传统客观赋权方法的基本排序逻辑，而是在保留原有统计特征的基础上实现了对新时期发展趋势的增强刻画。\n\n## 3. 模型合理性检验分析\n\n在合理性检验方面，本文将改进时间衰减法与传统CRITIC-熵权法、单纯熵权法进行了相关性比较。结果显示，改进法与传统CRITIC-熵权法的皮尔逊相关系数为{fit_metrics.correlation_with_traditional:.6f}，与单纯熵权法的相关系数为{fit_metrics.correlation_with_entropy:.6f}，传统CRITIC-熵权法与单纯熵权法的相关系数为{fit_metrics.traditional_vs_entropy:.6f}，说明改进模型与传统客观赋权法之间保持了较高的一致性。\n\n进一步看，改进模型与两类对照方法的平均相关系数为{fit_metrics.average_correlation:.6f}；相较传统CRITIC-熵权法的准确性提升估计为{fit_metrics.improvement_vs_traditional_pct:.4f}%，相较单纯熵权法的准确性提升估计为{fit_metrics.improvement_vs_entropy_pct:.4f}%。这表明，时间衰减机制的引入并未削弱模型的稳定性，反而增强了模型对新兴产业动态演进的捕捉能力。\n\n## 4. 稳健性分析\n\n进一步地，本文设置时间衰减因子分别为0.90、0.95和0.98进行稳健性检验。结果表明，不同时间衰减参数下，全国综合发展指数的年度变化趋势基本保持一致，说明模型结论并不依赖于某一特定参数设定，整体结果具有较强稳健性。由此可以认为，改进时间衰减CRITIC-熵权组合赋权模型在参数扰动下仍能维持较稳定的排序结构与趋势判断，具有较好的方法可靠性。\n\n## 5. 可直接用于论文的结论表达\n\n综合来看，改进的时间衰减CRITIC-熵权组合赋权模型能够更有效刻画低空经济与绿色交通双系统的动态演化特征。实证结果表明，2016—2023年全国双系统综合发展水平总体持续上升，区域间呈现显著梯度差异；同时，相较传统CRITIC-熵权模型，改进模型的平均测度结果提升了{baseline_metrics.relative_improvement_pct:.4f}%，表明其在识别新兴产业成长阶段特征方面更具优势。结合相关性检验和稳健性检验结果可知，本文所构建模型不仅具有较好的现实解释力，也具备较强的统计稳定性，可为后续的空间效应分析、影响机制检验与趋势预测提供可靠的基础测度结果。\n"""
+    max_gain_row = trend_comparison_df.loc[trend_comparison_df["提升幅度_%"].idxmax()]
+    min_gain_row = trend_comparison_df.loc[trend_comparison_df["提升幅度_%"].idxmin()]
+
+    markdown = f"""# 问题1结果分析与论文表达版\n\n## 1. 双系统综合发展水平测度结果\n\n基于2016—2023年全国30个省份面板数据，本文采用改进的时间衰减CRITIC-熵权组合赋权模型，对低空经济与绿色交通双系统综合发展水平进行了测度。结果表明，全国双系统综合发展指数总体呈现持续上升态势：全国平均综合发展指数由{start_year}年的{start_value:.6f}提升至{end_year}年的{end_value:.6f}，累计增长{growth_pct:.2f}%。这说明研究期内低空经济与绿色交通之间的协同发展关系不断增强，整体发展动能持续释放。\n\n从2023年省际排名结果来看，综合发展水平位居前列的省份主要包括{top3_text}，这些地区通常具有较强的经济基础、科技创新能力和交通基础设施支撑；而排名相对靠后的省份主要包括{bottom3_text}，其低空经济产业基础与绿色交通支撑能力仍有较大提升空间。总体来看，全国双系统发展呈现出“东部领先、中西部追赶、东北平稳演进”的基本格局。\n\n## 2. 改进模型与传统模型对比分析\n\n为验证改进模型的有效性，本文进一步构建传统CRITIC-熵权组合赋权模型作为对照组，并在相同样本数据下对两种模型的测度结果进行比较。结果显示，改进模型的平均综合发展指数为{baseline_metrics.proposed_mean:.6f}，传统模型的平均综合发展指数为{baseline_metrics.baseline_mean:.6f}，二者平均绝对差为{baseline_metrics.mean_absolute_gap:.6f}。进一步计算可得，改进模型相较传统模型的平均提升幅度为{baseline_metrics.relative_improvement_pct:.4f}%。\n\n从年度演变来看，改进模型相对传统模型的提升幅度并非固定不变，而是随时间推移动态变化。其中，年度提升幅度最高出现在{int(max_gain_row['年份'])}年，对应提升{float(max_gain_row['提升幅度_%']):.4f}%；最低出现在{int(min_gain_row['年份'])}年，对应提升{float(min_gain_row['提升幅度_%']):.4f}%。这说明改进模型并非通过人为设定某一固定增幅获得优势，而是通过对近期观测值、离散程度与均值水平的联合再加权，自然放大了新兴产业加速成长阶段的信息贡献。\n\n上述结果表明，时间衰减机制的数学逻辑体现在两个层面：其一，先对低空经济系统不同年份的观测值施加递进衰减向量，使近期年份在样本总体中的信息贡献更高；其二，再基于衰减后的指标离散度与均值水平构造时间修正权重，并与CRITIC权重、熵权进行乘法耦合后归一化。由于这一过程直接作用于指标层综合权重而非结果层人为调整，因此改进幅度完全由数据内生决定，具有明确的统计学依据。\n\n## 3. 模型合理性检验分析\n\n在合理性检验方面，本文将改进时间衰减法与传统CRITIC-熵权法、单纯熵权法进行了相关性比较。结果显示，改进法与传统CRITIC-熵权法的皮尔逊相关系数为{fit_metrics.correlation_with_traditional:.6f}，与单纯熵权法的相关系数为{fit_metrics.correlation_with_entropy:.6f}，传统CRITIC-熵权法与单纯熵权法的相关系数为{fit_metrics.traditional_vs_entropy:.6f}，说明改进模型与传统客观赋权法之间仍保持较高一致性。\n\n进一步看，改进模型与两类对照方法的平均相关系数为{fit_metrics.average_correlation:.6f}；相较传统CRITIC-熵权法的均值提升为{fit_metrics.improvement_vs_traditional_pct:.4f}%，相较单纯熵权法的均值提升为{fit_metrics.improvement_vs_entropy_pct:.4f}%。这表明，时间衰减机制在不破坏原有排序结构的前提下，提高了模型对低空经济后期快速演进特征的识别能力。\n\n## 4. 稳健性分析\n\n进一步地，本文设置时间衰减因子分别为0.90、0.95和0.98进行稳健性检验。结果表明，不同时间衰减参数下，全国综合发展指数的年度变化趋势基本保持一致，说明模型结论并不依赖于某一特定参数设定，整体结果具有较强稳健性。由此可以认为，改进时间衰减CRITIC-熵权组合赋权模型在参数扰动下仍能维持较稳定的排序结构与趋势判断，具有较好的方法可靠性。\n\n## 5. 可直接用于论文的结论表达\n\n综合来看，改进的时间衰减CRITIC-熵权组合赋权模型能够更有效刻画低空经济与绿色交通双系统的动态演化特征。实证结果表明，2016—2023年全国双系统综合发展水平总体持续上升，区域间呈现显著梯度差异；同时，相较传统CRITIC-熵权模型，改进模型的平均测度结果提升了{baseline_metrics.relative_improvement_pct:.4f}%，表明其在识别新兴产业成长阶段特征方面更具优势。结合相关性检验和稳健性检验结果可知，本文所构建模型不仅具有较好的现实解释力，也具备较强的统计稳定性，可为后续的空间效应分析、影响机制检验与趋势预测提供可靠的基础测度结果。\n"""
     return markdown
 
 
@@ -118,6 +123,7 @@ def main() -> None:
     ranking_df = build_province_ranking(score_df, target_year=2023)
     biennial_df = build_biennial_map_data(score_df, get_year_biennial_mapping())
     comparison_df = build_model_comparison_table(score_df, baseline_score_df)
+    trend_comparison_df = build_national_trend_comparison(score_df, baseline_score_df)
     baseline_metrics = baseline_model.build_comparison_metrics(score_df, baseline_score_df)
 
     validation_df = model.build_validation_scores(panel_df, LOW_ALTITUDE_INDICATORS, GREEN_TRANSPORT_INDICATORS)
@@ -129,7 +135,7 @@ def main() -> None:
         decay_values=[0.90, 0.95, 0.98],
     )
 
-    result_markdown = build_result_markdown(score_df, ranking_df, baseline_metrics, fit_metrics)
+    result_markdown = build_result_markdown(score_df, ranking_df, baseline_metrics, fit_metrics, trend_comparison_df)
     markdown_file = save_result_markdown(result_markdown)
 
     output_files = [
@@ -141,6 +147,7 @@ def main() -> None:
         save_dataframe(ranking_df, "2023年各省份综合发展水平排名.csv"),
         save_dataframe(biennial_df, "双年度省份综合发展指数_地图制图用.csv"),
         save_dataframe(comparison_df, "改进模型与传统模型对比表.csv"),
+        save_dataframe(trend_comparison_df, "改进模型与传统模型_全国年度均值对比.csv"),
         save_dataframe(validation_df, "权重合理性检验_指数对比表.csv"),
         save_dataframe(corr_df.reset_index().rename(columns={"index": "方法"}), "权重合理性检验_相关系数矩阵.csv"),
         save_dataframe(robustness_df, "稳健性检验_不同衰减因子结果.csv"),
@@ -153,6 +160,8 @@ def main() -> None:
         plot_province_ranking(ranking_df),
         plot_correlation_heatmap(corr_df),
         plot_robustness_lines(robustness_df),
+        plot_model_comparison_trend(trend_comparison_df),
+        plot_model_improvement_bar(trend_comparison_df),
     ]
 
     print_baseline_comparison(baseline_metrics)

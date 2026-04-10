@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from config import FIG_DIR
+from question_1.config import FIG_DIR
 
 
 warnings.filterwarnings("ignore", message=r"Glyph .* missing from font")
@@ -34,10 +34,11 @@ def save_figure(file_name: str) -> Path:
 
 
 def plot_weight_comparison(weight_df: pd.DataFrame) -> Path:
-    """绘制双系统指标的 CRITIC、熵权和综合权重对比柱状图。"""
+    """绘制双系统指标的 CRITIC、熵权、时间衰减权重和综合权重对比柱状图。"""
+    available_columns = [column for column in ["CRITIC权重", "熵权", "时间衰减权重", "综合权重"] if column in weight_df.columns]
     plot_df = weight_df.melt(
         id_vars=["系统", "指标"],
-        value_vars=["CRITIC权重", "熵权", "综合权重"],
+        value_vars=available_columns,
         var_name="权重类型",
         value_name="权重值",
     )
@@ -118,3 +119,40 @@ def plot_robustness_lines(robustness_df: pd.DataFrame) -> Path:
     plt.xlabel("年份")
     plt.ylabel("全国平均综合发展指数")
     return save_figure("检验2_稳健性检验对比折线图.png")
+
+
+def plot_model_comparison_trend(comparison_df: pd.DataFrame) -> Path:
+    """绘制改进模型与传统模型全国平均指数对比折线图。"""
+    plot_df = comparison_df.melt(
+        id_vars=["年份"],
+        value_vars=["改进模型全国平均指数", "传统模型全国平均指数"],
+        var_name="模型类型",
+        value_name="全国平均综合指数",
+    )
+    plt.figure(figsize=(11, 7))
+    sns.lineplot(
+        data=plot_df,
+        x="年份",
+        y="全国平均综合指数",
+        hue="模型类型",
+        style="模型类型",
+        markers=True,
+        dashes=False,
+        linewidth=2.4,
+        palette="Set1",
+    )
+    plt.title("改进模型与传统模型全国平均指数对比")
+    plt.xlabel("年份")
+    plt.ylabel("全国平均综合指数")
+    return save_figure("图5_改进模型与传统模型全国平均指数对比.png")
+
+
+def plot_model_improvement_bar(comparison_df: pd.DataFrame) -> Path:
+    """绘制改进模型相对传统模型年度提升幅度柱状图。"""
+    plt.figure(figsize=(11, 7))
+    sns.barplot(data=comparison_df, x="年份", y="提升幅度_%", color="#4C72B0")
+    plt.axhline(0, color="black", linewidth=1)
+    plt.title("图6 改进模型相对传统模型年度提升幅度")
+    plt.xlabel("年份")
+    plt.ylabel("提升幅度（%）")
+    return save_figure("图6_改进模型相对传统模型年度提升幅度.png")

@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple
 
 import pandas as pd
 
-from config import PROCESSED_DIR, RAW_DIR, REGION_MAP, RESULT_DIR, YEARS
+from question_1.config import PROCESSED_DIR, RAW_DIR, REGION_MAP, RESULT_DIR, YEARS
 
 
 # 按主题框架中的二级指标顺序定义两个系统的指标列表

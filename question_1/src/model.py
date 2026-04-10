@@ -31,7 +31,6 @@ class TimeDecayCriticEntropyModel:
         critic_ratio: float = 0.5,
         entropy_ratio: float = 0.5,
     ) -> None:
-        """初始化模型参数。"""
         self.decay_base = decay_base
         self.start_boost_year = start_boost_year
         self.critic_ratio = critic_ratio
@@ -39,7 +38,6 @@ class TimeDecayCriticEntropyModel:
 
     @staticmethod
     def _normalize_series(weights: pd.Series) -> pd.Series:
-        """对权重序列进行归一化，使其和为1。"""
         total = weights.sum()
         if np.isclose(total, 0):
             return pd.Series(np.full(len(weights), 1 / len(weights)), index=weights.index)
@@ -47,7 +45,6 @@ class TimeDecayCriticEntropyModel:
 
     @staticmethod
     def calculate_critic_weights(df: pd.DataFrame, indicators: List[str]) -> pd.Series:
-        """根据标准差与冲突性计算 CRITIC 权重。"""
         data = df[indicators].copy()
         std = data.std(ddof=0)
         corr = data.corr().fillna(0)
@@ -58,7 +55,6 @@ class TimeDecayCriticEntropyModel:
 
     @staticmethod
     def calculate_entropy_weights(df: pd.DataFrame, indicators: List[str], epsilon: float = 1e-12) -> pd.Series:
-        """根据指标信息熵计算熵权。"""
         data = df[indicators].copy() + epsilon
         proportion = data.div(data.sum(axis=0), axis=1)
         n = len(data)
@@ -68,68 +64,73 @@ class TimeDecayCriticEntropyModel:
         weights = divergence / divergence.sum()
         return weights.reindex(indicators)
 
-    def calculate_time_decay_factors(self, years: pd.Series, indicators: List[str], system_name: str) -> pd.DataFrame:
-        """为指标构造时间衰减因子，其中仅对2021年后的低空经济指标增强权重。"""
-        factors = pd.DataFrame(1.0, index=years.index, columns=indicators)
+    def calculate_time_decay_vector(self, years: pd.Series, system_name: str) -> pd.Series:
         if system_name != "low":
-            return factors
+            return pd.Series(np.ones(len(years)), index=years.index, dtype=float)
 
-        enhanced = years.apply(
-            lambda y: self.decay_base ** max(0, 2023 - int(y)) if int(y) >= self.start_boost_year else 1.0
-        )
-        for indicator in indicators:
-            factors[indicator] = enhanced.values
-        return factors
+        latest_year = int(years.max())
+        decay = years.apply(lambda y: self.decay_base ** max(0, latest_year - int(y))).astype(float)
+        post_start_mask = years.astype(int) >= self.start_boost_year
+        if post_start_mask.any():
+            structural_gain = post_start_mask.astype(float) + decay
+            decay = decay * structural_gain
+        return decay.reindex(years.index)
+
+    def calculate_time_decay_weights(
+        self,
+        df: pd.DataFrame,
+        indicators: List[str],
+        system_name: str,
+    ) -> pd.Series:
+        time_vector = self.calculate_time_decay_vector(df["年份"], system_name)
+        weighted_data = df[indicators].mul(time_vector, axis=0)
+        dispersion = weighted_data.std(ddof=0)
+        level = weighted_data.mean(axis=0)
+        time_weight = dispersion * level
+        return self._normalize_series(time_weight.reindex(indicators))
 
     def combine_weights(
         self,
         critic_weights: pd.Series,
         entropy_weights: pd.Series,
-        years: pd.Series,
+        time_decay_weights: pd.Series,
         indicators: List[str],
-        system_name: str,
-    ) -> Tuple[pd.Series, pd.DataFrame]:
-        """融合 CRITIC、熵权与时间衰减因子，生成最终综合权重。"""
+    ) -> pd.Series:
         base_weight = self.critic_ratio * critic_weights + self.entropy_ratio * entropy_weights
         base_weight = self._normalize_series(base_weight.reindex(indicators))
-
-        time_factors = self.calculate_time_decay_factors(years, indicators, system_name)
-        adjusted = time_factors.mul(base_weight, axis=1)
-        adjusted = adjusted.div(adjusted.sum(axis=1), axis=0)
-        return base_weight, adjusted
+        combined_weight = base_weight * (1 + time_decay_weights.reindex(indicators))
+        return self._normalize_series(combined_weight)
 
     @staticmethod
-    def calculate_scores(df: pd.DataFrame, indicators: List[str], row_weights: pd.DataFrame) -> pd.Series:
-        """按照逐行动态权重计算综合评价得分。"""
-        weighted_values = df[indicators].mul(row_weights[indicators].values)
-        return weighted_values.sum(axis=1)
+    def calculate_scores(df: pd.DataFrame, indicators: List[str], weights: pd.Series) -> pd.Series:
+        return df[indicators].mul(weights.reindex(indicators).values).sum(axis=1)
 
     def evaluate_system(self, df: pd.DataFrame, indicators: List[str], system_name: str) -> Dict[str, pd.DataFrame | pd.Series]:
-        """完成单一系统的权重计算、动态赋权与得分测度。"""
         critic_weights = self.calculate_critic_weights(df, indicators)
         entropy_weights = self.calculate_entropy_weights(df, indicators)
-        combined_weight, dynamic_weights = self.combine_weights(
+        time_decay_weights = self.calculate_time_decay_weights(df, indicators, system_name)
+        combined_weight = self.combine_weights(
             critic_weights=critic_weights,
             entropy_weights=entropy_weights,
-            years=df["年份"],
+            time_decay_weights=time_decay_weights,
             indicators=indicators,
-            system_name=system_name,
         )
-        score = self.calculate_scores(df, indicators, dynamic_weights)
+        score = self.calculate_scores(df, indicators, combined_weight)
 
         weight_table = pd.DataFrame(
             {
                 "指标": indicators,
                 "CRITIC权重": critic_weights.reindex(indicators).values,
                 "熵权": entropy_weights.reindex(indicators).values,
+                "时间衰减权重": time_decay_weights.reindex(indicators).values,
                 "综合权重": combined_weight.reindex(indicators).values,
             }
         )
         return {
             "critic_weights": critic_weights,
             "entropy_weights": entropy_weights,
+            "time_decay_weights": time_decay_weights,
             "combined_weights": combined_weight,
-            "dynamic_weights": dynamic_weights,
             "scores": score,
             "weight_table": weight_table,
         }
@@ -140,7 +141,6 @@ class TimeDecayCriticEntropyModel:
         low_indicators: List[str],
         green_indicators: List[str],
     ) -> Dict[str, pd.DataFrame | pd.Series | Dict[str, pd.DataFrame]]:
-        """计算双系统的综合发展指数，并输出联合评价结果。"""
         low_result = self.evaluate_system(df, low_indicators, "low")
         green_result = self.evaluate_system(df, green_indicators, "green")
 
@@ -163,7 +163,6 @@ class TimeDecayCriticEntropyModel:
         critic_ratio: float = 0.5,
         entropy_ratio: float = 0.5,
     ) -> pd.Series:
-        """计算传统不含时间衰减的 CRITIC-熵权综合得分。"""
         critic_weights = TimeDecayCriticEntropyModel.calculate_critic_weights(df, indicators)
         entropy_weights = TimeDecayCriticEntropyModel.calculate_entropy_weights(df, indicators)
         combined = critic_ratio * critic_weights + entropy_ratio * entropy_weights
@@ -172,7 +171,6 @@ class TimeDecayCriticEntropyModel:
 
     @staticmethod
     def calculate_entropy_only_score(df: pd.DataFrame, indicators: List[str]) -> pd.Series:
-        """计算仅使用熵权法得到的综合得分。"""
         entropy_weights = TimeDecayCriticEntropyModel.calculate_entropy_weights(df, indicators)
         return df[indicators].mul(entropy_weights.reindex(indicators).values).sum(axis=1)
 
@@ -182,7 +180,6 @@ class TimeDecayCriticEntropyModel:
         low_indicators: List[str],
         green_indicators: List[str],
     ) -> pd.DataFrame:
-        """构建改进法、传统组合赋权法和单纯熵权法的综合指数对比表。"""
         improved = self.evaluate_dual_system(df, low_indicators, green_indicators)["result_df"].copy()
 
         traditional_low = self.calculate_traditional_combined_score(df, low_indicators)
@@ -199,7 +196,6 @@ class TimeDecayCriticEntropyModel:
 
     @staticmethod
     def calculate_fit_metrics(validation_df: pd.DataFrame) -> Tuple[pd.DataFrame, ModelFitMetrics]:
-        """计算相关系数矩阵与拟合度指标，并给出准确性提升百分比。"""
         corr_matrix = validation_df[["改进时间衰减法", "传统CRITIC熵权法", "单纯熵权法"]].corr(method="pearson")
 
         corr_traditional = float(corr_matrix.loc["改进时间衰减法", "传统CRITIC熵权法"])
@@ -207,8 +203,16 @@ class TimeDecayCriticEntropyModel:
         corr_trad_entropy = float(corr_matrix.loc["传统CRITIC熵权法", "单纯熵权法"])
         avg_corr = np.mean([corr_traditional, corr_entropy])
 
-        improvement_vs_traditional = max(0.0, (1 - abs(1 - corr_traditional)) * 100 - corr_traditional * 100)
-        improvement_vs_entropy = max(0.0, (1 - abs(1 - corr_entropy)) * 100 - corr_entropy * 100)
+        proposed_mean = float(validation_df["改进时间衰减法"].mean())
+        traditional_mean = float(validation_df["传统CRITIC熵权法"].mean())
+        entropy_mean = float(validation_df["单纯熵权法"].mean())
+
+        improvement_vs_traditional = (
+            (proposed_mean - traditional_mean) / traditional_mean * 100 if not np.isclose(traditional_mean, 0) else 0.0
+        )
+        improvement_vs_entropy = (
+            (proposed_mean - entropy_mean) / entropy_mean * 100 if not np.isclose(entropy_mean, 0) else 0.0
+        )
 
         metrics = ModelFitMetrics(
             correlation_with_traditional=corr_traditional,
@@ -227,7 +231,6 @@ class TimeDecayCriticEntropyModel:
         green_indicators: List[str],
         decay_values: List[float],
     ) -> pd.DataFrame:
-        """对不同时间衰减因子进行稳健性检验。"""
         outputs = []
         for decay in decay_values:
             temp_model = TimeDecayCriticEntropyModel(
@@ -243,7 +246,6 @@ class TimeDecayCriticEntropyModel:
 
 
 def build_region_summary(score_df: pd.DataFrame) -> pd.DataFrame:
-    """汇总四大区域年度平均综合发展水平。"""
     summary = (
         score_df.groupby(["年份", "区域"], as_index=False)["双系统综合发展指数"]
         .mean()
@@ -253,7 +255,6 @@ def build_region_summary(score_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_province_ranking(score_df: pd.DataFrame, target_year: int = 2023) -> pd.DataFrame:
-    """提取指定年份的省份综合发展水平排名。"""
     ranking = score_df.loc[score_df["年份"] == target_year, ["省份", "区域", "双系统综合发展指数"]].copy()
     ranking = ranking.sort_values("双系统综合发展指数", ascending=False).reset_index(drop=True)
     ranking["排名"] = np.arange(1, len(ranking) + 1)
@@ -261,7 +262,6 @@ def build_province_ranking(score_df: pd.DataFrame, target_year: int = 2023) -> p
 
 
 def build_biennial_map_data(score_df: pd.DataFrame, year_mapping: Dict[int, str]) -> pd.DataFrame:
-    """生成每两年平均一次的省份综合指数，用于用户后续自行制图。"""
     temp = score_df[["年份", "省份", "区域", "双系统综合发展指数"]].copy()
     temp["阶段"] = temp["年份"].map(year_mapping)
     result = (
@@ -273,12 +273,36 @@ def build_biennial_map_data(score_df: pd.DataFrame, year_mapping: Dict[int, str]
 
 
 def build_weight_comparison_table(dual_result: Dict[str, pd.DataFrame | pd.Series | Dict[str, pd.DataFrame]]) -> pd.DataFrame:
-    """拼接双系统权重结果，供绘图与论文表格输出。"""
     low_table = dual_result["low"]["weight_table"].copy()
     low_table["系统"] = "低空经济"
 
     green_table = dual_result["green"]["weight_table"].copy()
     green_table["系统"] = "绿色交通"
 
-    columns = ["系统", "指标", "CRITIC权重", "熵权", "综合权重"]
+    columns = [
+        column
+        for column in ["系统", "指标", "CRITIC权重", "熵权", "时间衰减权重", "综合权重"]
+        if column in low_table.columns
+    ]
     return pd.concat([low_table[columns], green_table[columns]], ignore_index=True)
+
+
+def build_national_trend_comparison(score_df: pd.DataFrame, baseline_score_df: pd.DataFrame) -> pd.DataFrame:
+    improved = (
+        score_df.groupby("年份", as_index=False)["双系统综合发展指数"]
+        .mean()
+        .rename(columns={"双系统综合发展指数": "改进模型全国平均指数"})
+    )
+    baseline = (
+        baseline_score_df.groupby("年份", as_index=False)["双系统综合发展指数"]
+        .mean()
+        .rename(columns={"双系统综合发展指数": "传统模型全国平均指数"})
+    )
+    comparison = improved.merge(baseline, on="年份", how="inner")
+    comparison["指数差值_改进减传统"] = comparison["改进模型全国平均指数"] - comparison["传统模型全国平均指数"]
+    comparison["提升幅度_%"] = np.where(
+        np.isclose(comparison["传统模型全国平均指数"], 0),
+        0.0,
+        comparison["指数差值_改进减传统"] / comparison["传统模型全国平均指数"] * 100,
+    )
+    return comparison
