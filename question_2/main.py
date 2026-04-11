@@ -67,6 +67,7 @@ def export_txt_bundles(results, data_bundle, out_dir: Path) -> None:
         f"样本年份：{data_bundle.panel_df['年份'].min()}-{data_bundle.panel_df['年份'].max()}",
         f"样本省份数：{data_bundle.panel_df['省份'].nunique()}",
         f"面板观测值：{len(data_bundle.panel_df)}",
+        "说明：低空经济与绿色交通两套指标体系分别计算系统指数，仅按省份-年份对齐进入第二问分析面板，未再合成为单一综合指数。",
         "",
         "【低空经济标准化数据前10行】",
         data_bundle.low_standardized.head(10).to_string(index=False),

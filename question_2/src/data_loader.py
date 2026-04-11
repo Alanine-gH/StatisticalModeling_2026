@@ -85,7 +85,7 @@ def entropy_weight(df: pd.DataFrame) -> pd.Series:
     return d / d.sum()
 
 
-def build_composite_index(df: pd.DataFrame, positive_map: Dict[str, bool]) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
+def build_system_index(df: pd.DataFrame, positive_map: Dict[str, bool]) -> Tuple[pd.DataFrame, pd.Series, pd.Series]:
     scaled = pd.DataFrame(index=df.index)
     for col in df.columns:
         scaled[col] = min_max_scale(df[col], positive=positive_map.get(col, True))
@@ -118,6 +118,7 @@ def _ensure_required_columns(df: pd.DataFrame, expected_cols: List[str], dataset
 
 
 def build_panel_dataframe(raw_dir: Path, processed_dir: Path) -> Tuple[pd.DataFrame, List[str], List[str], pd.DataFrame, pd.DataFrame]:
+    """分别基于两张指标表构建低空经济系统指数与绿色交通系统指数。"""
     low_df, green_df = _read_excel_panel(raw_dir)
     low_df = normalize_column_names(low_df)
     green_df = normalize_column_names(green_df)
@@ -131,8 +132,8 @@ def build_panel_dataframe(raw_dir: Path, processed_dir: Path) -> Tuple[pd.DataFr
     for col in ["私家车拥有量", "可吸入颗粒物年均浓度", "二氧化碳年排放量", "高峰拥堵延时指数"]:
         green_positive[col] = False
 
-    low_scaled, low_score, low_weights = build_composite_index(low_df[LOW_INDICATORS], low_positive)
-    green_scaled, green_score, green_weights = build_composite_index(green_df[GREEN_INDICATORS], green_positive)
+    low_scaled, low_score, low_weights = build_system_index(low_df[LOW_INDICATORS], low_positive)
+    green_scaled, green_score, green_weights = build_system_index(green_df[GREEN_INDICATORS], green_positive)
 
     low_out = pd.concat([low_df[key_cols], low_scaled.add_prefix("low_")], axis=1)
     low_out["low_score"] = low_score
@@ -143,13 +144,16 @@ def build_panel_dataframe(raw_dir: Path, processed_dir: Path) -> Tuple[pd.DataFr
     panel["年份"] = panel["年份"].astype(int)
     panel = panel.sort_values(["年份", "省份"]).reset_index(drop=True)
 
+    # 第二问只将两套系统指数按“年份-省份”对齐到同一面板中，
+    # 供“低空经济 -> 绿色交通”影响机制分析使用，不再额外合成为单一综合指数。
+
     processed_dir.mkdir(parents=True, exist_ok=True)
     low_standardized = pd.concat([low_df[key_cols], low_scaled], axis=1)
     green_standardized = pd.concat([green_df[key_cols], green_scaled], axis=1)
     low_standardized.to_csv(processed_dir / "低空经济_标准化结果.csv", index=False, encoding="utf-8-sig")
     green_standardized.to_csv(processed_dir / "绿色交通_标准化结果.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame({"指标": LOW_INDICATORS, "权重": low_weights.values}).to_csv(processed_dir / "低空经济_指标权重.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame({"指标": GREEN_INDICATORS, "权重": green_weights.values}).to_csv(processed_dir / "绿色交通_指标权重.csv", index=False, encoding="utf-8-sig")
+    pd.DataFrame({"指标": LOW_INDICATORS, "权重": low_weights.values, "系统指数": low_score.values}).to_csv(processed_dir / "低空经济_指标权重.csv", index=False, encoding="utf-8-sig")
+    pd.DataFrame({"指标": GREEN_INDICATORS, "权重": green_weights.values, "系统指数": green_score.values}).to_csv(processed_dir / "绿色交通_指标权重.csv", index=False, encoding="utf-8-sig")
     panel.to_csv(processed_dir / "processed_panel.csv", index=False, encoding="utf-8-sig")
     return panel, LOW_INDICATORS.copy(), GREEN_INDICATORS.copy(), low_standardized, green_standardized
 
