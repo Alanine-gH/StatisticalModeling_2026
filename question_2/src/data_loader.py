@@ -152,8 +152,8 @@ def build_panel_dataframe(raw_dir: Path, processed_dir: Path) -> Tuple[pd.DataFr
     green_standardized = pd.concat([green_df[key_cols], green_scaled], axis=1)
     low_standardized.to_csv(processed_dir / "低空经济_标准化结果.csv", index=False, encoding="utf-8-sig")
     green_standardized.to_csv(processed_dir / "绿色交通_标准化结果.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame({"指标": LOW_INDICATORS, "权重": low_weights.values, "系统指数": low_score.values}).to_csv(processed_dir / "低空经济_指标权重.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame({"指标": GREEN_INDICATORS, "权重": green_weights.values, "系统指数": green_score.values}).to_csv(processed_dir / "绿色交通_指标权重.csv", index=False, encoding="utf-8-sig")
+    pd.DataFrame({"指标": LOW_INDICATORS, "权重": low_weights.values}).to_csv(processed_dir / "低空经济_指标权重.csv", index=False, encoding="utf-8-sig")
+    pd.DataFrame({"指标": GREEN_INDICATORS, "权重": green_weights.values}).to_csv(processed_dir / "绿色交通_指标权重.csv", index=False, encoding="utf-8-sig")
     panel.to_csv(processed_dir / "processed_panel.csv", index=False, encoding="utf-8-sig")
     return panel, LOW_INDICATORS.copy(), GREEN_INDICATORS.copy(), low_standardized, green_standardized
 
